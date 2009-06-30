@@ -1,0 +1,27 @@
+# Set a nice git-prompt (calls git_status())
+git_prompt_info() {
+    local git_dir ref br;
+    git_dir=$(git rev-parse --git-dir 2> /dev/null) || return
+    ref=$(git symbolic-ref HEAD 2> /dev/null) || return
+    branch_prompt=${ref#refs/heads/}
+    if [ -n "$branch_prompt" ]; then
+        status_icon=$(git_status)
+        echo "($branch_prompt)"
+    fi
+}
+
+# Show character if index and/or work-tree are dirty
+git_status() {
+    my_status=$(git status 2> /dev/null)
+    if [[ "$my_status" == *"Changes to be committed"* ]]; then
+        output="c"
+    fi
+
+    if [[ "$my_status" == *"Changed but not updated"* ]]; then
+        output="$output u"
+    fi
+
+    echo "[$output]"
+}
+
+export PS1="\[\e[0;36m\]\t\[\e[0m\] \[\e[0;33m\]\u@\[\e[0m\]\[\e[0;31m\]\h\[\e[0m\] {\[\e[1;33m\]\w\[\e[0m\]}\[\e[0;31m\]\$(git_status)\[\e[0m\]\[\e[0;36m\]\$(git_prompt_info)\[\e[0m\]$"
