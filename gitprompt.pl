@@ -10,7 +10,7 @@ exit if $headref =~ m/fatal: Not a git repository/;
 
 my $branch;
 if ($headref eq 'fatal: ref HEAD is not a symbolic ref') {
-  chomp($branch = `git show-ref --hash --abbrev HEAD 2>&1`);
+  chomp($branch = `git rev-parse --short HEAD`);
 } elsif ($headref =~ /^refs\/heads\/(.+?)\s*$/) {
   $branch = $1;
 } else {
