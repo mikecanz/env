@@ -6,7 +6,7 @@ use IPC::Open3;
 use Time::HiRes qw(time);
 
 chomp(my $headref = `git symbolic-ref HEAD 2>&1`);
-exit if $headref eq 'fatal: Not a git repository';
+exit if $headref =~ m/fatal: Not a git repository/;
 
 my $branch;
 if ($headref eq 'fatal: ref HEAD is not a symbolic ref') {
@@ -35,7 +35,7 @@ while ($running && $waiting) {
 
   $running = kill 0 => $statuspid;
   select undef, undef, undef, .001; #yield, actually
-  $waiting = time < $start + .05;
+  $waiting = time < $start + .5;
 }
 
 if (!$waiting) {
