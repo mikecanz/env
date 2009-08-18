@@ -1,12 +1,12 @@
 #!/usr/bin/perl -w
 use strict;
 
-# synopsis: export PS1='$(gitprompt.pl)
+# synopsis: export PS1='$(gitprompt.pl)'
 #
 # Trailing symbols:
-#   $(gitprompt.pl "[%b%c%u]" c=\+ u=\~)'
+#   $(gitprompt.pl "[%b%c%u]" c=\+ u=\~)
 # Change branchname color:
-#   $(gitprompt.pl "[%c%u%b%e[0m]" c=%e[32m u=%e[31m)'
+#   $(gitprompt.pl "[%c%u%b%e[0m]" c=%e[32m u=%e[31m)
 #
 # Format codes:
 #   %b - current branch name
@@ -16,8 +16,8 @@ use strict;
 # Definitions:
 #   c  - string to use for %c, defaults to 'c'
 #   u  - string to use for %u, defaults to 'u'
-#   nc - string to use when %c could not be determined ("no c"), defaults to c."?"
-#   nu - string to use when %u could not be determined ("no u"), defaults to u."?"
+#   nc - string to use when %c timed out ("no c"), defaults to c."?"
+#   nu - string to use when %u timed out ("no u"), defaults to u."?"
  
 use IO::Handle;
 use IPC::Open3;
