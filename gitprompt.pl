@@ -3,15 +3,15 @@ use strict;
 
 # Synopsis:
 #   export PS0='[\t]\[\e[36m\]%{(%b)\[\e[0;1m\][%c%u%f%t]%}\[\e[0m\]\u\$ '
-#   export PROMPT_COMMAND='export PS1=$(gitprompt.pl statuscount=1)'
+#   export PROMPT_COMMAND=$PROMPT_COMMAND';export PS1=$(gitprompt.pl statuscount=1)'
 #
 # Examples:
 #   Trailing symbols:
 #     export PS0='...%{[%b\[\e[0m\]%c%u%f%t\[\e[30;1m\]]%}\[\e[0m\]...'
-#     export PROMPT_COMMAND='export PS1=$(gitprompt.pl c=\+ u=\~ f=\* statuscount=1)'
+#     export PROMPT_COMMAND=$PROMPT_COMMAND';export PS1=$(gitprompt.pl c=\+ u=\~ f=\* statuscount=1)'
 #   Change branchname color:
 #     export PS0='%{[\[%f%c%u%t\]%b\[\e[0m\]]%}\[\e[0m\]\u\$ '
-#     export PROMPT_COMMAND='export PS1=$(gitprompt.pl c=%e[32m u=%e[31m f=%e[35m t=%e[30\;1m)'
+#     export PROMPT_COMMAND=$PROMPT_COMMAND';export PS1=$(gitprompt.pl c=%e[32m u=%e[31m f=%e[35m t=%e[30\;1m)'
 #
 # Format codes:
 #   %b - current branch name
