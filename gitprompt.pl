@@ -74,7 +74,7 @@ print $output;
 sub gitdata {
   ### prechecks ###
   chomp(my $headref = `git symbolic-ref HEAD 2>&1`);
-  return {} if $headref =~ /fatal: Not a git repository/i;
+  return {} if $headref =~ /fatal: Not a git repository|fatal: Unable to read current working directory/i;
 
   ### definitions ###
   my %opt = (
