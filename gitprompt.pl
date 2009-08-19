@@ -1,12 +1,15 @@
 #!/usr/bin/perl -w
 use strict;
 
-# synopsis: export PS1='$(gitprompt.pl)'
+# Synopsis:
+#   export PS0='[\t]GITPROMPT\u\$ '
+#   export PROMPT_COMMAND='export PS1=$(gitprompt.pl)'
 #
-# Trailing symbols:
-#   $(gitprompt.pl "[%b%c%u%f%t]" c=\+ u=\~ f=\* statuscount=1)
-# Change branchname color:
-#   $(gitprompt.pl "[%c%u%t%b%e[0m]" c=%e[32m u=%e[31m t=%e[30;1m)
+# Examples:
+#   Trailing symbols:
+#     $(gitprompt.pl "[%b%[%e[1m%]%c%u%f%t%[%e[0m%]]" c=\+ u=\~ f=\* statuscount=1)
+#   Change branchname color:
+#     $(gitprompt.pl "[%[%c%u%t%]%b%[%e[0m%]]" c=%e[32m u=%e[31m t=%e[30;1m)
 #
 # Format codes:
 #   %b - current branch name
@@ -15,19 +18,32 @@ use strict;
 #   %f - untracked-files flag
 #   %t - timeout flag
 #   %e - ascii escape
+#   %[ - literal '\[' to mark the start of nonprinting characters for bash
+#   %] - literal '\]' to mark the end of nonprinting characters for bash
+#   %% - literal '%'
 # Options:
 #   c           - string to use for %c; defaults to 'c'
 #   u           - string to use for %u; defaults to 'u'
 #   f           - string to use for %f; defaults to 'f'
 #   t           - string to use for %t; defaults to '?'
 #   statuscount - boolean; whether to suffix %c/%u with counts ("c4u8")
- 
+
 use IO::Handle;
 use IPC::Open3;
 use Time::HiRes qw(time);
+
+my $ps0 = $ENV{PS0};
+unless ($ps0 && $ps0 =~ /GITPROMPT/) {
+  print "define PS0; have it contain GITPROMPT!";
+  exit 1;
+}
  
 chomp(my $headref = `git symbolic-ref HEAD 2>&1`);
-exit if $headref =~ /fatal: Not a git repository/;
+if ($headref =~ /fatal: Not a git repository/) {
+  $ps0 =~ s/GITPROMPT//;
+  print $ps0;
+  exit;
+}
 
 my $format = '(%b)[%c%u%t]';
 my %opt = (
@@ -114,9 +130,13 @@ my %formatvalue = (
   b => $branch,
   t => $running ? $opt{t} : '',
   e => "\e",
+  '%' => '%',
+  '[' => "\\[",
+  ']' => "\\]",
 );
 foreach my $flag (values %sectionmap) {
   $formatvalue{$flag} = $statuscount{$flag} ? ($opt{$flag}.($opt{statuscount} ? $statuscount{$flag} : '')) : '';
 }
-$str =~ s/\%(\w)/exists $formatvalue{$1} ? $formatvalue{$1} : '%'.$1/ge;
-print $str;
+$str =~ s/\%(.)/exists $formatvalue{$1} ? $formatvalue{$1} : '%'.$1/ge;
+$ps0 =~ s/GITPROMPT/$str/;
+print $ps0;
