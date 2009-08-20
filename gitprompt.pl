@@ -1,20 +1,23 @@
 #!/usr/bin/perl -w
 use strict;
 
-# Synopsis:
-#   export PS0='[\t]\[\e[36m\]%{(%b)\[\e[0;1m\][%c%u%f%t]%}\[\e[0m\]\u\$ '
-#   export PROMPT_COMMAND=$PROMPT_COMMAND';export PS1=$(gitprompt.pl statuscount=1)'
-#
 # Examples:
-#   Trailing symbols:
+#   Legacy style (mcanz):
+#     export PS0='[\t]\[\e[36m\]%{(%b)\[\e[0;1m\][%c%u%f%t]%}\[\e[0m\]\u\$ '
+#     export PROMPT_COMMAND=$PROMPT_COMMAND';export PS1=$(gitprompt.pl statuscount=1)'
+#   Trailing symbols (ewastl):
 #     export PS0='...%{[%b\[\e[0m\]%c%u%f%t\[\e[30;1m\]]%}\[\e[0m\]...'
 #     export PROMPT_COMMAND=$PROMPT_COMMAND';export PS1=$(gitprompt.pl c=\+ u=\~ f=\* statuscount=1)'
-#   Change branchname color:
+#   Change branchname color (inspired by amirabella):
 #     export PS0='%{[\[%f%c%u%t\]%b\[\e[0m\]]%}\[\e[0m\]\u\$ '
 #     export PROMPT_COMMAND=$PROMPT_COMMAND';export PS1=$(gitprompt.pl c=%e[32m u=%e[31m f=%e[35m t=%e[30\;1m)'
+#   Colored counts instead of flags (cmaher):
+#     export PS0='%{\[\e[0;36m\](\[\e[1;36m\]%b\[\e[0;36m\])[%c%u%f%t\[\e[0;36m\]]%}\[\e[0m\]$ '
+#     export PROMPT_COMMAND=$PROMPT_COMMAND';export PS1=$(gitprompt.pl statuscount=1 u=%[%e[31m%] c=%[%e[32m%] f=%[%e[1\;30m%])'
 #
 # Format codes:
 #   %b - current branch name
+#   %i - current commit id
 #   %c - to-be-committed flag
 #   %u - touched-files flag
 #   %f - untracked-files flag
@@ -33,6 +36,27 @@ use strict;
 #   t           - string to use for %t; defaults to '?'
 #   g           - string to use for %g; defaults to the empty string (see %{)
 #   statuscount - boolean; whether to suffix %c/%u with counts ("c4u8")
+#
+# Notes:
+# - If your .bashrc doesn't already define a $PROMPT_COMMAND (this is common
+#   in /etc/bashrc, which is often sourced by default), use this
+#   PROMPT_COMMAND line instead:
+#     export PROMPT_COMMAND='export PS1=$(gitprompt.pl ...)'
+# - A good rule of thumb is to use real bash escapes (backslash flavor) inside
+#   the definition for PS0 (where escaping is normal) and gitprompt.pl escapes
+#   (percent flavor) inside the arguments to gitprompt.pl (where escaping is
+#   troublesome).
+# - To prevent your prompt from getting garbled, wrap all nonprinting sequences
+#   (like color codes) in \[...\] or %[...%].  This tells Bash not to count
+#   those characters when determining the length of your prompt and prevents it
+#   from becoming confused.
+# - For...  (assuming %c is whatever flags you care about)
+#   - brackets no matter what, use...
+#       [%c]
+#   - brackets only in a git repo, regardless of status, use...
+#       %{[%c%g]%}
+#   - brackets only when a flag is set, use...
+#       %{[%c]%}
 
 use IO::Handle;
 use IPC::Open3;
@@ -74,7 +98,7 @@ print $output;
 sub gitdata {
   ### prechecks ###
   chomp(my $headref = `git symbolic-ref HEAD 2>&1`);
-  return {} if $headref =~ /fatal: Not a git repository/i;
+  return {} if $headref =~ /fatal: Not a git repository|fatal: Unable to read current working directory/i;
 
   ### definitions ###
   my %opt = (
@@ -97,11 +121,9 @@ sub gitdata {
   }
 
   ### collect branch data ###
-  my $branch;
+  chomp(my $commitid = `git rev-parse --short HEAD 2>&1`);
+  my $branch = $commitid; #fallback value
   if ($headref =~ /fatal: ref HEAD is not a symbolic ref/i) {
-    # get commit id for lookup and fallback
-    chomp($branch = `git rev-parse --short HEAD 2>&1`);
-
     # find gitdir
     chomp(my $gitdir = `git rev-parse --git-dir`);
  
@@ -161,6 +183,7 @@ sub gitdata {
   ### produce output ###
   my %formatvalue = (
     b => $branch,
+    i => $commitid,
     t => $running ? $opt{t} : '',
     g => $opt{g},
   );
