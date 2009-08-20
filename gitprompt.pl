@@ -36,6 +36,27 @@ use strict;
 #   t           - string to use for %t; defaults to '?'
 #   g           - string to use for %g; defaults to the empty string (see %{)
 #   statuscount - boolean; whether to suffix %c/%u with counts ("c4u8")
+#
+# Notes:
+# - If your .bashrc doesn't already define a $PROMPT_COMMAND (this is common
+#   in /etc/bashrc, which is often sourced by default), use this
+#   PROMPT_COMMAND line instead:
+#     export PROMPT_COMMAND='export PS1=$(gitprompt.pl ...)'
+# - A good rule of thumb is to use real bash escapes (backslash flavor) inside
+#   the definition for PS0 (where escaping is normal) and gitprompt.pl escapes
+#   (percent flavor) inside the arguments to gitprompt.pl (where escaping is
+#   troublesome).
+# - To prevent your prompt from getting garbled, wrap all nonprinting sequences
+#   (like color codes) in \[...\] or %[...%].  This tells Bash not to count
+#   those characters when determining the length of your prompt and prevents it
+#   from becoming confused.
+# - For...  (assuming %c is whatever flags you care about)
+#   - brackets no matter what, use...
+#       [%c]
+#   - brackets only in a git repo, regardless of status, use...
+#       %{[%c%g]%}
+#   - brackets only when a flag is set, use...
+#       %{[%c]%}
 
 use IO::Handle;
 use IPC::Open3;
