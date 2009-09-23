@@ -2,8 +2,7 @@
 
 
 # filters the screen -ls output to show the sesssions
-#sessions=`screen -ls | sed -ne 's/[[:space:]]//' -ne 's/\((Attached)\|(Detached)\)// p'`
-sessions=`screen -ls | grep ached | awk -F' ' '{print $1;}'`
+sessions=`screen -ls | sed -ne 's/[[:space:]]//' -ne 's/\((Attached)\|(Detached)\)// p'`
 res=`echo "$sessions" | wc -w`
 
 if (( $res == 0 ))
@@ -33,7 +32,7 @@ fi
 
 #attach to specified session
 linenum=0
-name=`screen -ls | grep ached | awk -F' ' '{print $1;}' |
+name=`screen -ls | sed -ne 's/[[:space:]]//' -ne 's/\((Attached)\|(Detached)\)// p' |
 while read line
 do
  let "linenum += 1"
@@ -43,8 +42,6 @@ do
         break
  fi
 done`
-
-echo "the name is $name"
 
 if [[ "$name" != "" ]]
 then
