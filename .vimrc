@@ -25,9 +25,6 @@ filetype indent off
 set hlsearch
 set incsearch " ...dynamically as they are typed.
 
-set listchars=tab:>-,trail:·,eol:$
-nmap <silent> <leader>s :set nolist!<CR>
-
 set laststatus=2
 let g:buftabs_in_statusline=1
 
