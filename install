@@ -1,0 +1,9 @@
+# This is a really simple and dumb install script
+# Don't run it more than once (because it's simple and dumb)
+
+cd /home/$USER
+
+cp /home/$USER/env/.vimrc /home/$USER/
+cp /home/$USER/env/.screenrc /home/$USER/
+
+echo "source /home/$USER/env/bashrc_additions" >> /home/$USER/.bashrc
