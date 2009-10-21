@@ -31,3 +31,5 @@ let g:buftabs_in_statusline=1
 highlight OverLength ctermbg=red ctermfg=white guibg=#592929
 match OverLength /\%121v.*/
 
+map ,pt <ESC>:%! perltidy<CR>
+map ,ptv <ESC>:'<,'>! perltidy<CR>

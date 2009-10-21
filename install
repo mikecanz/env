@@ -4,6 +4,7 @@ cd ~
 
 cp ~/env/.vimrc ~/
 cp ~/env/.screenrc ~/
+cp ~/env/.perltidyrc ~/
 
 grep -q "source /home/$USER/env/bashrc_additions" ~/.bashrc || echo "source /home/$USER/env/bashrc_additions" >> ~/.bashrc
 
