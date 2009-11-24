@@ -15,13 +15,17 @@ use strict;
 #     export PS0='%{\[\e[0;36m\](\[\e[1;36m\]%b\[\e[0;36m\])[%c%u%f%t\[\e[0;36m\]]%}\[\e[0m\]$ '
 #     export PROMPT_COMMAND=$PROMPT_COMMAND';export PS1=$(gitprompt.pl statuscount=1 u=%[%e[31m%] c=%[%e[32m%] f=%[%e[1\;30m%])'
 #
+#
 # Format codes:
+#   These can be placed in PS0 or the option definitions.  In PS0, bash escapes
+#   should be preferred when available.
+#
 #   %b - current branch name
 #   %i - current commit id
 #   %c - to-be-committed flag
 #   %u - touched-files flag
 #   %f - untracked-files flag
-#   %t - timeout flag
+#   %t - terrible tragedy flag
 #   %g - is-git-repo flag
 #   %e - ascii escape
 #   %[ - literal '\[' to mark the start of nonprinting characters for bash
@@ -29,13 +33,25 @@ use strict;
 #   %% - literal '%'
 #   %{ - begin conditionally printed block, only shown if a nonliteral expands within
 #   %} - end conditionally printed block
+#
+#
 # Options:
+#   These are specified as arguments to the call to gitprompt.pl in the form
+#   name=value, such as $(gitprompt.pl c=\+ u=\~ f=\* statuscount=1).
+#
 #   c           - string to use for %c; defaults to 'c'
 #   u           - string to use for %u; defaults to 'u'
 #   f           - string to use for %f; defaults to 'f'
-#   t           - string to use for %t; defaults to '?'
+#   t           - string to use for %t after a timeout; defaults to '?'
+#   l           - string to use for %t when the repo is locked; defaults to '?~'
+#   n           - string to use for %t when no data could be collected, such as
+#                 if run from within a .git directory; defaults to '??'
 #   g           - string to use for %g; defaults to the empty string (see %{)
 #   statuscount - boolean; whether to suffix %c/%u with counts ("c4u8")
+#   nobkg       - boolean; if true, does not keep `git status' in the
+#                 background; set this if you work with large repositories and
+#                 want to avoid lock collisions
+#
 #
 # Notes:
 # - If your .bashrc doesn't already define a $PROMPT_COMMAND (this is common
@@ -65,7 +81,7 @@ use Time::HiRes qw(time);
 ### prechecks ###
 my $ps0 = $ENV{PS0};
 unless ($ps0) {
-  print "!define PS0!";
+  print "!define PS0!> ";
   exit 1;
 }
 
@@ -106,6 +122,8 @@ sub gitdata {
     u => 'u',
     f => 'f',
     t => '?',
+    l => '?~',
+    n => '??',
     g => '',
     statuscount => 0,
   );
@@ -146,11 +164,11 @@ sub gitdata {
   }
  
   ### collect status data ###
-  $SIG{CHLD} = sub { wait(); };
-  my ($statusout, @status);
+  my ($statusexitcode, $statusout, @status);
+  $SIG{CHLD} = sub { wait(); $statusexitcode = $?>>8; };
   my $statuspid = open3(undef,$statusout,undef,"git status");
   $statusout->blocking(0);
-  my ($running, $waiting, $start) = (1, 1, time);
+  my ($running, $waiting, $start, $valid) = (1, 1, time, 0);
   while ($running && $waiting) {
     while (<$statusout>) {
       push @status, $_;
@@ -158,7 +176,7 @@ sub gitdata {
  
     $running = kill 0 => $statuspid;
     select undef, undef, undef, .001; #yield, actually
-    $waiting = time < $start + .5;
+    $waiting = time < $start + 1;
   }
 
   ### parse status data ###
@@ -175,8 +193,28 @@ sub gitdata {
       if (/^\# (\S.+?)\:\s*$/ && exists $sectionmap{$1}) {
         $section = $sectionmap{$1};
       } elsif ($section && /^\#\t\S/) {
-			  $statuscount{$section}++;
+        $statuscount{$section}++;
+        $valid = 1;
+      } elsif (/^nothing to commit\b/) {
+        $valid = 1;
       }
+    }
+  }
+
+  my $timeout = '';
+  if ($running) {
+    # it was running when we stopped caring
+    $timeout = $opt{t};
+		kill 2 => $statuspid if $opt{nobkg};
+  } elsif (!$valid) {
+    #determine cause of failure
+    if ($status[0] =~ /\.git\/index\.lock/) {
+      $timeout = $opt{l};
+    } elsif ($status[0] =~ /must be run in a work tree/) {
+      $timeout = $opt{n};
+    } else {
+      print "\\[\e[41m\\]!! gitprompt.pl: \\`git status\' returned with exit code $statusexitcode and message:\n$status[0]\\[\e[0m\\]";
+      $timeout = "\\[\e[41m\\]!$statusexitcode!\\[\e[0m\\]";
     }
   }
 
@@ -184,7 +222,7 @@ sub gitdata {
   my %formatvalue = (
     b => $branch,
     i => $commitid,
-    t => $running ? $opt{t} : '',
+    t => $timeout,
     g => $opt{g},
   );
   foreach my $flag (values %sectionmap) {
