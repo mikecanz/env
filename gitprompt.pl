@@ -48,6 +48,9 @@ use strict;
 #                 if run from within a .git directory; defaults to '??'
 #   g           - string to use for %g; defaults to the empty string (see %{)
 #   statuscount - boolean; whether to suffix %c/%u with counts ("c4u8")
+#   nobkg       - boolean; if true, does not keep `git status' in the
+#                 background; set this if you work with large repositories and
+#                 want to avoid lock collisions
 #
 #
 # Notes:
@@ -173,7 +176,7 @@ sub gitdata {
  
     $running = kill 0 => $statuspid;
     select undef, undef, undef, .001; #yield, actually
-    $waiting = time < $start + .5;
+    $waiting = time < $start + 1;
   }
 
   ### parse status data ###
@@ -190,9 +193,9 @@ sub gitdata {
       if (/^\# (\S.+?)\:\s*$/ && exists $sectionmap{$1}) {
         $section = $sectionmap{$1};
       } elsif ($section && /^\#\t\S/) {
-			  $statuscount{$section}++;
+        $statuscount{$section}++;
         $valid = 1;
-      } elsif (/nothing to commit\s+\(working directory clean\)/) {
+      } elsif (/^nothing to commit\b/) {
         $valid = 1;
       }
     }
@@ -202,14 +205,15 @@ sub gitdata {
   if ($running) {
     # it was running when we stopped caring
     $timeout = $opt{t};
-	} elsif (!$valid) {
+		kill 2 => $statuspid if $opt{nobkg};
+  } elsif (!$valid) {
     #determine cause of failure
     if ($status[0] =~ /\.git\/index\.lock/) {
       $timeout = $opt{l};
     } elsif ($status[0] =~ /must be run in a work tree/) {
       $timeout = $opt{n};
     } else {
-      print "\\[\e[41m\\]!! gitprompt.pl: `git status' returned with exit code $statusexitcode and message:\n$status[0]\\[\e[0m\\]";
+      print "\\[\e[41m\\]!! gitprompt.pl: \\`git status\' returned with exit code $statusexitcode and message:\n$status[0]\\[\e[0m\\]";
       $timeout = "\\[\e[41m\\]!$statusexitcode!\\[\e[0m\\]";
     }
   }
