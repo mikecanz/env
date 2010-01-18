@@ -48,9 +48,6 @@ use strict;
 #                 if run from within a .git directory; defaults to '??'
 #   g           - string to use for %g; defaults to the empty string (see %{)
 #   statuscount - boolean; whether to suffix %c/%u with counts ("c4u8")
-#   nobkg       - boolean; if true, does not keep `git status' in the
-#                 background; set this if you work with large repositories and
-#                 want to avoid lock collisions
 #
 #
 # Notes:
@@ -185,6 +182,7 @@ sub gitdata {
     'Changes to be committed' => 'c',
     'Changed but not updated' => 'u',
     'Untracked files' => 'f',
+    'Unmerged paths' => 'u',
   );
   if (!$running) {
     # if it terminated, parse output
@@ -205,7 +203,7 @@ sub gitdata {
   if ($running) {
     # it was running when we stopped caring
     $timeout = $opt{t};
-		kill 2 => $statuspid if $opt{nobkg};
+    kill 2 => $statuspid;
   } elsif (!$valid) {
     #determine cause of failure
     if ($status[0] =~ /\.git\/index\.lock/) {
