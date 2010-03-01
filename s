@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-if ($ARGV[0] && $ARGV[0] eq "-h") {
+if ($ARGV[0] && $ARGV[0] eq '-h') {
     print <<'EOS';
 Usage: s [id|name]
 id is session number, not pid. Run s without args to see session id.
@@ -17,7 +17,9 @@ my $i = 1;
 
 my @buffer = `screen -ls`;
 
-exit if (scalar(@buffer) == 1);
+if ($buffer[0] =~ m/No Sockets found/) {
+    die("  No existing SCREEN session to reattach to...\n");
+}
 
 print <<'EOS';
 
