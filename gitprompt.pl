@@ -20,6 +20,7 @@ use strict;
 #   These can be placed in PS0 or the option definitions.  In PS0, bash escapes
 #   should be preferred when available.
 #
+#   %m - merge status
 #   %b - current branch name
 #   %i - current commit id
 #   %c - to-be-committed flag
@@ -184,6 +185,7 @@ sub gitdata {
     'Untracked files' => 'f',
     'Unmerged paths' => 'u',
   );
+  my $merge_status = '';
   if (!$running) {
     # if it terminated, parse output
     my ($section);
@@ -195,6 +197,8 @@ sub gitdata {
         $valid = 1;
       } elsif (/^nothing to commit\b/) {
         $valid = 1;
+      } elsif (/^\# (?:\S.+?)\ is (ahead|behind) (?:\S.+?) by (\d+) commit/) {
+        $merge_status = (($1 eq 'ahead') ? '+' : '-') . $2;
       }
     }
   }
@@ -222,6 +226,7 @@ sub gitdata {
     i => $commitid,
     t => $timeout,
     g => $opt{g},
+    m => $merge_status,
   );
   foreach my $flag (values %sectionmap) {
     $formatvalue{$flag} = $statuscount{$flag} ? ($opt{$flag}.($opt{statuscount} ? $statuscount{$flag} : '')) : '';
