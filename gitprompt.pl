@@ -199,6 +199,8 @@ sub gitdata {
         $valid = 1;
       } elsif (/^\# (?:\S.+?)\ is (ahead|behind) (?:\S.+?) by (\d+) commit/) {
         $merge_status = (($1 eq 'ahead') ? '+' : '-') . $2;
+      } elsif (/^\# and have (\d+) and (\d+) different commit/) {
+        $merge_status = "+$1-$2";
       }
     }
   }
