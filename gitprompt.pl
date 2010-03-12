@@ -194,7 +194,6 @@ sub gitdata {
     'Unmerged paths' => 'u',
   );
   $statuscount{$_} = 0 foreach values %sectionmap;
-  @statuscount{qw(A B)} = (0, 0, 0);
   my $can_fast_forward = '';
 
   if (!$running) {
@@ -241,8 +240,8 @@ sub gitdata {
     i => $commitid,
     t => $timeout,
     g => $opt{g},
-    F => $can_fast_forward ? $opt{F} : '',
   );
+  $formatvalue{F} = $opt{F} if $can_fast_forward;
   foreach my $flag (keys %statuscount) {
     $formatvalue{$flag} = $statuscount{$flag} ? ($opt{$flag}.($opt{statuscount} ? $statuscount{$flag} : '')) : '';
   }
