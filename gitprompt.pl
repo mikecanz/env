@@ -20,12 +20,14 @@ use strict;
 #   These can be placed in PS0 or the option definitions.  In PS0, bash escapes
 #   should be preferred when available.
 #
-#   %m - merge status
 #   %b - current branch name
 #   %i - current commit id
 #   %c - to-be-committed flag
 #   %u - touched-files flag
 #   %f - untracked-files flag
+#   %A - merge commits ahead flag
+#   %B - merge commits behind flag
+#   %F - can-fast-forward flag
 #   %t - terrible tragedy flag
 #   %g - is-git-repo flag
 #   %e - ascii escape
@@ -43,6 +45,9 @@ use strict;
 #   c           - string to use for %c; defaults to 'c'
 #   u           - string to use for %u; defaults to 'u'
 #   f           - string to use for %f; defaults to 'f'
+#   A           - string to use for %A; defaults to 'A'
+#   B           - string to use for %B; defaults to 'B'
+#   F           - string to use for %F; defaults to 'F'
 #   t           - string to use for %t after a timeout; defaults to '?'
 #   l           - string to use for %t when the repo is locked; defaults to '?~'
 #   n           - string to use for %t when no data could be collected, such as
@@ -119,6 +124,9 @@ sub gitdata {
     c => 'c',
     u => 'u',
     f => 'f',
+    A => 'A',
+    B => 'B',
+    F => 'F',
     t => '?',
     l => '?~',
     n => '??',
@@ -185,7 +193,10 @@ sub gitdata {
     'Untracked files' => 'f',
     'Unmerged paths' => 'u',
   );
-  my $merge_status = '';
+  $statuscount{$_} = 0 foreach values %sectionmap;
+  @statuscount{qw(A B)} = (0, 0, 0);
+  my $can_fast_forward = '';
+
   if (!$running) {
     # if it terminated, parse output
     my ($section);
@@ -197,10 +208,12 @@ sub gitdata {
         $valid = 1;
       } elsif (/^nothing to commit\b/) {
         $valid = 1;
-      } elsif (/^\# (?:\S.+?)\ is (ahead|behind) (?:\S.+?) by (\d+) commit/) {
-        $merge_status = (($1 eq 'ahead') ? '+' : '-') . $2;
+      } elsif (/\bis (ahead|behind) .+ by (\d+) commits?(\,? and can be fast\-forwarded)?/) {
+        $statuscount{($1 eq 'ahead') ? 'A' : 'B'} = $2;
+        $can_fast_forward = 1 if $3;
       } elsif (/^\# and have (\d+) and (\d+) different commit/) {
-        $merge_status = "+$1-$2";
+        $statuscount{A} = $1;
+        $statuscount{B} = $2;
       }
     }
   }
@@ -228,9 +241,9 @@ sub gitdata {
     i => $commitid,
     t => $timeout,
     g => $opt{g},
-    m => $merge_status,
+    F => $can_fast_forward ? $opt{F} : '',
   );
-  foreach my $flag (values %sectionmap) {
+  foreach my $flag (keys %statuscount) {
     $formatvalue{$flag} = $statuscount{$flag} ? ($opt{$flag}.($opt{statuscount} ? $statuscount{$flag} : '')) : '';
   }
   return \%formatvalue;
