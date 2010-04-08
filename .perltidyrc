@@ -1,2 +1,15 @@
--ci=4
--bl
+--brace-tightness=2
+--square-bracket-tightness=2
+--paren-tightness=2
+
+--closing-brace-indentation=1
+--closing-paren-indentation=1
+--closing-square-bracket-indentation=1
+
+--line-up-parentheses
+--nooutdent-long-lines
+--maximum-line-length=120
+--cuddled-else
+--opening-sub-brace-on-new-line
+--stack-opening-tokens
+--nospace-for-semicolon
