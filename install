@@ -9,3 +9,5 @@ cp ~/env/.perltidyrc ~/
 grep -q "source $HOME/env/bashrc_additions" ~/.bashrc || echo "source $HOME/env/bashrc_additions" >> ~/.bashrc
 
 ~/env/git-aliases
+
+. .bashrc
