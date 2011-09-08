@@ -193,6 +193,7 @@ sub gitdata {
   my %sectionmap = (
     'Changes to be committed' => 'c',
     'Changed but not updated' => 'u',
+    'Changes not staged for commit' => 'u',
     'Untracked files' => 'f',
     'Unmerged paths' => 'u',
   );
