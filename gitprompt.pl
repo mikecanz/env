@@ -204,9 +204,9 @@ sub gitdata {
     # if it terminated, parse output
     my ($section);
     foreach (@status) {
-      if (/^\# (\S.+?)\:\s*$/ && exists $sectionmap{$1}) {
+      if (/^(?:\# )?(\S.+?)\:\s*$/ && exists $sectionmap{$1}) {
         $section = $sectionmap{$1};
-      } elsif ($section && /^\#\t\S/) {
+      } elsif ($section && /^\#?\t\S/) {
         $statuscount{$section}++;
         $valid = 1;
       } elsif (/^nothing to commit\b/) {
