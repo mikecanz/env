@@ -6,8 +6,13 @@ cp ~/env/.vimrc ~/
 cp ~/env/.screenrc ~/
 cp ~/env/.perltidyrc ~/
 
-grep -q "source $HOME/env/bashrc_additions" ~/.bashrc || echo "source $HOME/env/bashrc_additions" >> ~/.bashrc
+case "$SHELL" in
+  */zsh)
+    grep -q "source $HOME/env/zshrc_additions" ~/.zshrc 2>/dev/null || echo "source $HOME/env/zshrc_additions" >> ~/.zshrc
+    ;;
+  *)
+    grep -q "source $HOME/env/bashrc_additions" ~/.bashrc 2>/dev/null || echo "source $HOME/env/bashrc_additions" >> ~/.bashrc
+    ;;
+esac
 
 ~/env/git-aliases
-
-. .bashrc

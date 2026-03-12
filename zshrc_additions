@@ -1,0 +1,29 @@
+alias gd="git difftool --tool=vimdiff"
+alias gl="git log -n 20 --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr)%Creset %an' --abbrev-commit --date=relative"
+alias gs="git status"
+alias gco="git checkout"
+alias gci="git commit"
+alias gb="git branch"
+alias gba="git branch -a"
+alias ll="ls -al"
+
+export SERVER_NAME=`hostname -f`
+
+if [ -s /var/lib/puppet/ec2_instance_tags ]
+then
+    export SERVER_NAME=`cat /var/lib/puppet/ec2_instance_tags | grep Name | sed s/Name://`
+fi
+
+export PATH=$PATH:$HOME/env
+
+# Git-aware prompt for zsh
+_git_prompt_info() {
+  LEADUP='%{(%b%[%e[1;37m%]%m%[%e[0;36m%])[%u%c%f%t%[%e[0;36m%]]%}' \
+    gitprompt.pl shell=zsh statuscount=1 'u=%[%e[31m%]' 'c=%[%e[32m%]' 'f=%[%e[1;37m%]'
+}
+
+precmd() {
+  local git_info
+  git_info=$(_git_prompt_info)
+  PROMPT="%F{cyan}%*%f %F{yellow}%n@%f%F{red}${SERVER_NAME}%f {%B%F{yellow}%~%b%f}%F{cyan}${git_info}%f$ "
+}

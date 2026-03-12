@@ -36,8 +36,6 @@ unless ($ps0) {
 my %formatliteral = (
   e => "\e",
   '%' => '%',
-  '[' => "\\[",
-  ']' => "\\]",
 );
 my %formatcondkeep = (
   g => 1,
@@ -57,16 +55,29 @@ my %opt = (
   g => '',
   statuscount => 0,
   keepempty => 1,
+  shell => 'bash',
 );
 
 ### read options ###
 if (@ARGV) {
   foreach (@ARGV) {
     return {error=>"invalid parameter $_"} unless /^(\w+)\=(.*?)$/;
-    my ($key,$val) = ($1,$2);
-    $val =~ s/\%(.)/exists $formatliteral{$1} ? $formatliteral{$1} : ''/ge;
-    $opt{$key} = $val;
+    $opt{$1} = $2;
   }
+}
+
+# Build shell-aware format literals
+if (($opt{shell} || '') eq 'zsh') {
+  $formatliteral{'['} = '%{';
+  $formatliteral{']'} = '%}';
+} else {
+  $formatliteral{'['} = "\\[";
+  $formatliteral{']'} = "\\]";
+}
+
+# Apply format substitution to option values
+foreach my $key (keys %opt) {
+  $opt{$key} =~ s/\%(.)/exists $formatliteral{$1} ? $formatliteral{$1} : ''/ge;
 }
 
 my %formatvalue = %{gitdata()};
@@ -95,7 +106,10 @@ foreach my $part (@ps0) {
   }
   $conditional = !$conditional;
 }
-$output = "\\[\e[0;30;41m\\]! $formatvalue{error} !\\[\e[0m\\]$output" if exists $formatvalue{error};
+if (exists $formatvalue{error}) {
+  my ($np_open, $np_close) = (($opt{shell} || '') eq 'zsh') ? ('%{', '%}') : ("\\[", "\\]");
+  $output = "${np_open}\e[0;30;41m${np_close}! $formatvalue{error} !${np_open}\e[0m${np_close}$output";
+}
 print $output;
 
 sub gitdata {
@@ -125,7 +139,14 @@ sub gitdata {
   } else {
     # unexpected input
     $headref =~ s/[^\x20-\x7e]//g;
+    $headref =~ s/%/%%/g if (($opt{shell} || '') eq 'zsh');
     return {error=>$headref};
+  }
+
+  # Escape % in dynamic values for zsh
+  if (($opt{shell} || '') eq 'zsh') {
+    $branch =~ s/%/%%/g;
+    $commitid =~ s/%/%%/g;
   }
 
   ### collect status data ###
@@ -189,8 +210,9 @@ sub gitdata {
     } elsif ($status[0] =~ /must be run in a work tree/) {
       $timeout = $opt{n};
     } else {
-      print "\\[\e[41m\\]!! gitprompt.pl: \\`git status\' returned with exit code $statusexitcode and message:\n$status[0]\\[\e[0m\\]";
-      $timeout = "\\[\e[41m\\]!$statusexitcode!\\[\e[0m\\]";
+      my ($np_open, $np_close) = (($opt{shell} || '') eq 'zsh') ? ('%{', '%}') : ("\\[", "\\]");
+      print "${np_open}\e[41m${np_close}!! gitprompt.pl: \\`git status\' returned with exit code $statusexitcode and message:\n$status[0]${np_open}\e[0m${np_close}";
+      $timeout = "${np_open}\e[41m${np_close}!$statusexitcode!${np_open}\e[0m${np_close}";
     }
   }
 
